@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High-Tech Weather App</title>
+  <style>
+    /* Basic reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Body styling with high-tech theme */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: radial-gradient(circle, #1d1f20, #000);
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+
+    .weather-container {
+      background: rgba(20, 20, 20, 0.9);
+      border: 2px solid #3a3f44;
+      border-radius: 15px;
+      padding: 30px 40px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 1s ease-out;
+    }
+
+    .search-bar {
+      display: flex;
+      margin-bottom: 25px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px 0 0 10px;
+      outline: none;
+      background: #2d2f31;
+      color: #e0e0e0;
+    }
+
+    .search-bar input::placeholder {
+      color: #7a7a7a;
+    }
+
+    .search-bar button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      background: linear-gradient(45deg, #00e0ff, #0077ff);
+      color: #fff;
+      border-radius: 0 10px 10px 0;
+      cursor: pointer;
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .search-bar button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(45deg, #0077ff, #00e0ff);
+    }
+
+    .weather-data {
+      display: none;
+      animation: slideIn 1s ease-out;
+      padding: 20px;
+      border-top: 1px solid #3a3f44;
+    }
+
+    .weather-data h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 26px;
+      color: #00e0ff;
+    }
+
+    .weather-details {
+      list-style: none;
+      line-height: 1.8;
+      font-size: 18px;
+    }
+
+    .weather-details li {
+      padding: 5px 0;
+      border-bottom: 1px dashed #3a3f44;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .weather-container {
+        padding: 20px;
+      }
+
+      .search-bar input, .search-bar button {
+        font-size: 14px;
+        padding: 10px;
+      }
+
+      .weather-data h2 {
+        font-size: 22px;
+      }
+
+      .weather-details {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="weather-container">
+    <div class="search-bar">
+      <input type="text" id="city" placeholder="Enter city (default: London)" />
+      <button onclick="fetchWeather()">Search</button>
+    </div>
+    <div class="weather-data" id="weatherData">
+      <!-- Weather details will be injected here -->
+    </div>
+  </div>
+
+  <script>
+    // API key and endpoint
+    const apiKey = "ecc7f57b1aba4945a12104724252903";
+    const baseUrl = "http://api.weatherapi.com/v1/current.json";
+
+    // Fetch weather data for the input city (or default to London)
+    function fetchWeather() {
+      const cityInput = document.getElementById('city').value.trim();
+      const city = cityInput !== "" ? cityInput : "London";
+
+      fetch(`${baseUrl}?key=${apiKey}&q=${city}&aqi=yes`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("City not found or an error occurred.");
+          }
+          return response.json();
+        })
+        .then(data => {
+          displayWeather(data);
+          speakWeather(data);
+        })
+        .catch(error => {
+          alert(error.message);
+          document.getElementById('weatherData').style.display = 'none';
+        });
+    }
+
+    // Display weather data on the page
+    function displayWeather(data) {
+      const weatherDiv = document.getElementById('weatherData');
+      const { name, country } = data.location;
+      const current = data.current;
+      const condition = current.condition.text;
+      const details = `
+        <h2>${name}, ${country}</h2>
+        <ul class="weather-details">
+          <li><strong>Temperature:</strong> ${current.temp_c} °C</li>
+          <li><strong>Condition:</strong> ${condition}</li>
+          <li><strong>Humidity:</strong> ${current.humidity}%</li>
+          <li><strong>Wind Speed:</strong> ${current.wind_kph} kph</li>
+          <li><strong>Precipitation:</strong> ${current.precip_mm} mm</li>
+          <li><strong>Air Quality (PM2.5):</strong> ${current.air_quality.pm2_5 ? current.air_quality.pm2_5.toFixed(2) : "N/A"}</li>
+        </ul>
+      `;
+      weatherDiv.innerHTML = details;
+      weatherDiv.style.display = 'block';
+    }
+
+    // Use Web Speech API to speak the weather results
+    function speakWeather(data) {
+      const { name, country } = data.location;
+      const current = data.current;
+      const condition = current.condition.text;
+      const speechText = `Weather update for ${name}, ${country}. 
+                          The temperature is ${current.temp_c} degrees Celsius with ${condition}. 
+                          Humidity is ${current.humidity} percent, wind speed is ${current.wind_kph} kilometers per hour,
+                          and there is ${current.precip_mm} millimeters of precipitation.`;
+      
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      utterance.lang = "en-US";
+      utterance.rate = 1;
+      speechSynthesis.speak(utterance);
+    }
+
+    // Load default weather (London) on page load
+    window.onload = fetchWeather;
+  </script>
+</body>
+</html>
